@@ -153,3 +153,17 @@ weather_df |>
   geom_density_ridges()
 ```
 
+Let's now save and embed
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5)
+
+ggsave("./viz_eda/data/weather_plot.pdf", weather_plot, width = 8, height = 5)
+```
+
+```{r}
+weather_plot 
+```
+
