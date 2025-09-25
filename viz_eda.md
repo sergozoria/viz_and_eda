@@ -312,3 +312,16 @@ weather_df |>
     ## (`stat_density_ridges()`).
 
 ![](viz_eda_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+Let’s now save and embed
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5)
+```
+
+    ## Warning: Removed 17 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](viz_eda_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
