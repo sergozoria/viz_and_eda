@@ -165,3 +165,112 @@ ggplot(data = molokai_df, aes(x = date, y = tmax, color = name)) +
     ## (`geom_point()`).
 
 ![](inc_viz_ii_093025_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+Let’s make three plots and combine using patchwork
+
+``` r
+ggp_tmax_tmin =
+  weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color= name)) +
+  geom_point(alpha = 0.5) +
+  theme(legend.position = "bottom")
+
+ggp_prec_density =
+  weather_df |> 
+  filter(prcp > 0) |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = 0.5) +
+  theme(legend.position = "none")
+
+ggp_temp_season =
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom")
+```
+
+Let’s combine plots side by side using + and / to change positions in
+the same place to convey as much information as possible
+
+``` r
+(ggp_tmax_tmin + ggp_prec_density) / ggp_temp_season
+```
+
+    ## Warning: Removed 17 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+    ## `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_smooth()`).
+    ## Removed 17 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](inc_viz_ii_093025_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Let’s now do some data manipulation. Factor variables \> rads a string
+like centrla park but it reads a number. Factor are in alphabetical
+order. But maybe you want things in a particular order. We need to
+convince ggplot that we want certain things as a factor. We need to move
+things arund using the mutate function. Take a look below. Factor
+relevel asings molokai 1, centralpark 2, and waterhole 3
+
+``` r
+weather_df |> 
+  mutate(name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))) |> 
+  ggplot(aes(x = name, y = tmax, fill= name)) +
+  geom_violin(alpha = 0.5)
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_ydensity()`).
+
+![](inc_viz_ii_093025_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+Factor order tells R which variable you’re operating on and which things
+you’re reodering it in respect to
+
+``` r
+weather_df |> 
+  mutate(name = fct_reorder(name, tmax)) |> 
+  ggplot(aes(x = name, y = tmax, fill= name)) +
+  geom_violin(alpha = 0.5)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `name = fct_reorder(name, tmax)`.
+    ## Caused by warning:
+    ## ! `fct_reorder()` removing 17 missing values.
+    ## ℹ Use `.na_rm = TRUE` to silence this message.
+    ## ℹ Use `.na_rm = FALSE` to preserve NAs.
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_ydensity()`).
+
+![](inc_viz_ii_093025_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+Factor in order, basically means what order the data appears in the
+dataset
+
+``` r
+pulse_df =
+  haven::read_sas("./data/public_pulse_data.sas7bdat") |> 
+  janitor::clean_names() |> 
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit",
+    names_prefix = "bdi_score_",
+    values_to = "bdi"
+  ) |> 
+  mutate(visit = fct_inorder(visit))
+
+pulse_df |> 
+  ggplot(aes(x = visit, y = bdi)) +
+  geom_boxplot()
+```
+
+    ## Warning: Removed 879 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+![](inc_viz_ii_093025_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
