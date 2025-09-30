@@ -1,207 +1,118 @@
 ---
-title: "Viz + Eda P1 - Visualization with ggplot2"
-date: September 25, 2025
+title: "Viz II - Visualization with ggplot2"
+date: September 30, 2025
 output: github_document
 ---
 
-```{r}
+```{r }
 library(tidyverse)
-library(ggridges)
+library(patchwork)
 library(p8105.datasets)
 ```
 
-Let's important the weather data
-
 ```{r}
 data("weather_df")
-```
-
-We're gonna to make scatterplots.
-
-```{r}
-ggplot(data = weather_df, mapping = aes(x = tmin, y = tmax)) +
-  geom_point()
-```
-
-We can also pipe in the ggplot to pass in the data
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax)) +
-  geom_point()
-```
-
-We can save the oplot to a variable
-
-```{r}
-weather_ggplot =
-  weather_df |> 
-  ggplot(aes(x = tmin, y = tmax)) +
-  geom_point()
-
-weather_ggplot
-```
-
-Some rows are missing. R will give you a warning message. We can filter to investigate further
-
-```{r}
-weather_df |> 
-  filter(is.na(tmax))
-```
-
-Let's do some fancy scatterplots. We can change the size, shape of the points, the colors, etc. Color will give us color for each data name in the dataset
-
-We use the `alpha` aesthetic to change the density and how opaque the data is to understand it better.
-
-We can also overlay stats model over the data by using `geom_smooth`, by plotting standard error lines, but sometimes it's better to remove it by using the `se = FALSE`
-
-Remember that the order of operations matter. So by plotting geom_point first plots the data points first, so by adding another function using the plus operation to add geom_smooth plots the lines over the data. Had we plotted geom_smooth before geom_point, it would be hard to see where the line is.
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax, color = name)) +
-  geom_point(alpha = 0.3) +
-  geom_smooth(se = FALSE)
   
 ```
 
-Where you define aeshtetics matters by putting the color in `geom_point` instead. It plots one line through the data. This shows flexibility in designing mapping. We can also define the alpha further and size to change the size of everyt poiint
+Let's make a basic scatterplot. We can use xlabs and ylabs to label the axis.Aadd labels if you're sending to someone else
 
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax)) +
-  geom_point(aes(color = name, size = prcp), alpha = 0.3) +
-  geom_smooth(se = FALSE)
+  geom_point(aes(color = name), alpha = 0.5) +
+  labs(
+      x = "Minimun daily temp",
+      y = "Maximun daily temp",
+      title = "Temperature scatterplot",
+      caption = "Data from NOAA",
+      color = "Location"
+  )
 ```
 
-We can also add more layers to split into multiple plots to see the data in multiple ways. The current data is too difficult to understand where the data might or might not be. Take a look below using facets. Using the dot (means nothing), the symbol ~ (communicates to R differences between the left and right hand side), and name (separate by name) will allow us to produce a facet plot showing all datasets or subgroups
+We are able to control the scales in the graphs. Scale x continous because oru x-axis is contrinuous but can also be categotical. We can labels and breaks. We can do a square root transformaiton on the y axis. We can also add limits to zoom in the plots
+
+We can also do filter to place limits rather than using the limits function. This can be done before typing ggplot. For example, filter(tmin > 10, <tmax 30 ).
+
+We can alos playing around with the color pallete using scale_color_hue, but don't do that. Refer to color palletes used from online sources. Look at the p8105 website for reference. Use the viridis package instead using the viridis::scale_color_viridi
 
 ```{r}
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax)) +
-  geom_point(aes(color = name), alpha = 0.3, size = 0.8) +
-  geom_smooth(se = FALSE) +
-  facet_grid(. ~ name)
+  geom_point(aes(color = name), alpha = 0.5) +
+  labs(
+      x = "Minimun daily temp",
+      y = "Maximun daily temp",
+      title = "Temperature scatterplot",
+      caption = "Data from NOAA",
+      color = "Location"
+  ) +
+  scale_x_continuous(
+    breaks = c(-20, 0, 25),
+    labels = c("-20C", "0", "25")
+  ) +
+  scale_y_continuous(
+    trans = "sqrt",
+    limits = c(10, 30)
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE
+  )
+  
 ```
 
-Interesting scatterplots. Shape basically basically tells R each column has a different shape, so we organize it by column/name
+Themes help with changing everything in the plot. 
+
+We can also use ggsave to save the plot or create a variable to save the plot in the workspace/environment for manipulation letter
 
 ```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax, color = name, shape = name)) +
-  geom_point(aes(size = prcp), alpha = 0.3) +
-  geom_smooth(se = FALSE) +
-  facet_grid(. ~ name)
+gg_temperature = weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.5) +
+  labs(
+      x = "Minimun daily temp",
+      y = "Maximun daily temp",
+      title = "Temperature scatterplot",
+      caption = "Data from NOAA",
+      color = "Location"
+  ) +
+  scale_x_continuous(
+    breaks = c(-20, 0, 25),
+    labels = c("-20C", "0", "25")
+  ) +
+  scale_y_continuous(
+    trans = "sqrt",
+    limits = c(10, 30)
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE
+  )
 ```
 
-Learning assessment. We filter to narrow it down to CentralPark_NY. When we create something new, we create mutate. We create the variable names. We do 9/5 to convert from celsius to fareinght and add 32 for tmix and tmax variables. Methods can help create linear regression, so we plot "lm" in it to plot across the data points
+Themes help with changing everything in the plot. You can use theme_minimal, theme_bw, theme_dark to change the theme of the plot. legend.posotion moves the legends to the bottom of the X axis. These_minimal we get white backgrounds with gray lines
 
 ```{r}
-weather_df |> 
-  filter(name == "CentralPark_NY") |> 
-  mutate(
-    tmax_f = tmax * (9/5) + 32,
-    tmin_f = tmin * (9/5) + 32) |> 
-  ggplot(aes(x = tmin_f, y = tmax_f)) +
+gg_temperature + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+Let's add data in geoms. 
+
+```{r}
+central_park_df =
+  weather_df |> 
+  filter(name == "CentralPark_NY")
+
+molokai_df =
+  weather_df |> 
+  filter(name == "Molokai_HI")
+
+ggplot(data = molokai_df, aes(x = date, y = tmax, color = name)) +
   geom_point() +
-  geom_smooth(se = FALSE, method = "lm")
-  
-```
-
-Other plots
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax)) +
-  geom_hex()
-```
-
-We can also map aeshtetics differently. Let's say someone wants the data points to be a specific color for all data points, we can do that. We can either type the color, or find the color code online and type that instead
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = tmax)) +
-  geom_point(color = "green")
-```
-
-We don't need to set Y for histrograms, since the Y axis will represent the count in a specific variable, so let's plot a histogram now. Color is the outer lines of the mappings and the fill aethetics is the inside of the plots/mappings. Without specifcing color and fill, the data points will overlap each other
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin)) +
-  geom_histogram(color = "white", fill = "red")
-
-weather_df |> 
-  ggplot(aes(x = tmin, color = name)) +
-  geom_histogram()
-
-weather_df |> 
-  ggplot(aes(x = tmin, fill = name)) +
-  geom_histogram()
-
-weather_df |> 
-  ggplot(aes(x = tmin, fill = name)) +
-  geom_histogram() +
-  facet_grid(name ~ .)
-```
-
-We could also do a density plot and we cna lwoer the alpha to compare mappings
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, fill = name)) +
-  geom_density(alpha = 0.5)
-```
-
-We can also do boxplots and add colors inside of the box
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = name, y = tmin)) +
-  geom_boxplot(aes(fill = name))
-```
-
-We can also do a violin plot
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = name, y = tmin, fill = name)) +
-  geom_violin()
-```
-
-Let's do ridge plots
-
-```{r}
-weather_df |> 
-  ggplot(aes(x = tmin, y = name, fill = name)) +
-  geom_density_ridges()
+  geom_line(data = central_park_df)
 ```
 
 
-Learning assessments plotting the prcp variable
 
-```{r}
-weather_df |> 
-  filter(prcp > 5, prcp < 1000) |> 
-  ggplot(aes(x = prcp, fill = name)) +
-  geom_density(alpha = 0.2)
-```
-
-Let's now save these plots as objects
-
-```{r}
-ggp_prcp_plot =
-  weather_df |> 
-  filter(prcp > 5, prcp < 1000) |> 
-  ggplot(aes(x = prcp, fill = name)) +
-  geom_density(alpha = 0.2)
-
-ggsave("data/density_prcp_plot.pdf", ggp_prcp_plot, width = 8, height = 6)
-```
-
-Embedding plots
-
-```{r, fig.width = 6, fig.height = 4}
-ggp_prcp_plot
-```
 
