@@ -1,0 +1,195 @@
+---
+title: "Exploratory analysis"
+date: September 30, 2025
+output: github_document
+---
+
+```{r }
+library(tidyverse)
+library(patchwork)
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+```{r}
+data("weather_df")
+
+weather_df =
+  weather_df |> 
+  mutate(month = floor_date(date, unit = "month"))
+  
+```
+
+Make plots. 
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = prcp)) +
+  geom_histogram()
+```
+
+Check on extreme values
+
+```{r}
+weather_df |> 
+  filter(prcp > 1000)
+```
+
+Look at the data gain
+
+```{r}
+weather_df |> 
+  filter(tmax >= 20, tmax <= 30) |> 
+  ggplot(aes(x = tmin, y = tmax, color = name, shape = name)) +
+  geom_point()
+```
+
+# add groups
+
+```{r}
+weather_df |> 
+  group_by(name, month)
+```
+
+Group and count things. Tells me how many observations we have per group
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  summarize(
+    n = n()
+  )
+
+weather_df |> 
+  group_by(month) |> 
+  summarize(
+    n = n()
+  )
+
+weather_df |> 
+  group_by(name, month) |> 
+  summarize(
+    n = n()
+  )
+```
+
+n_distinct counts distinct instances. In the case below it would be by the group month
+
+```{r}
+weather_df |> 
+  group_by(month) |> 
+  summarize(
+    n = n_distinct(date)
+  )
+```
+
+We can also count directly
+
+```{r}
+weather_df |> 
+  count(name)
+```
+
+interesting summaries such as the mean by month first across each of differen weather stations. When we have any missing observations, R will coerce it to `NA`. We can use `na.rm = TRUE` to remove missing values. We can also plot in the median and sd if needed. 
+
+We can have each summary seperately by the month and name to make the data clear
+
+Right now the order of the data below doesn't matter, but we have to be careful when the order matters. If you're running a regression, the order doesn't matter
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  summarize(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    median_tin = median(tmin, na.rm = TRUE),
+    sd_prcp = sd(prcp, na.rm = TRUE)
+  )
+```
+
+Still a dataframe, so ggplot can plot dataframes. 
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  summarize(
+    mean_tmax = mean(tmax, na.rm = TRUE)
+  ) |> 
+  ggplot(aes(x = month, y = mean_tmax, color = name)) +
+  geom_point() +
+  geom_line()
+```
+
+We can untidy it using pivot_wider from pivot_longer. We can use `knitr::kable` to create a more readable, organized table, and digits basically tells you how many numbers after the decimal point 
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  summarize(
+    mean_tmax = mean(tmax, na.rm = TRUE)
+  ) |> 
+  pivot_wider(
+    names_from = name,
+    values_from = mean_tmax
+  ) |> 
+  knitr::kable(digits = 2)
+```
+
+Let's mutate with groups. It's going to take all the tmax observations and compute the mean. Compurated the mean by everything but we can also group it along with the mean. The grouping and mutating matters. By centering the data, it averages to 0 and then we can look at the weather observations
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    center_tmax = tmax - mean_tmax
+    ) |> 
+  ggplot(aes(x = date, y = center_tmax, color = name)) +
+  geom_point()
+```
+
+Look for cold days. We can filter so temp rank is less than 2 and give us the coldest dates. The value of 1 is basically telling you the highest tmin value in the example below
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  mutate(temp_rank = min_rank(desc(tmin))) |> 
+  filter(temp_rank < 2)
+```
+
+What about logs. This is the example where the order matters
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    lagged_tmax = log(tmax))
+```
+
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    temp_change = tmax - lag(tmax)
+  ) |> 
+  summarize(
+    sd_tmax_change = sd(temp_change, na.rm = TRUE),
+    tmax_change_max = sd(temp_change, na.rm = TRUE)
+  )
+```
+
